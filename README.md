@@ -1,5 +1,8 @@
 # PSXPadRPI
+
 PSXPad is the project that can emulate communication between Playstation 1 and linux compatible gamepad. This repository is related to one part of two of this project. Second part is named PSXPadStm32 and you can find it here: https://github.com/bleakdev/PSXPadSTM32
+
+![PSXPad](https://github.com/bleakdev/PSXPadSTM32/raw/master/media/photo.png)
 
 # How it works
 To run this project you will need two boards: Raspberry PI (I tested it with RPI Zero) and Blue pill (stm32 compatible board).
