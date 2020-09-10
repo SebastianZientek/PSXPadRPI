@@ -1,5 +1,5 @@
-rsync main.cpp pi@raspberrypi:/home/pi/PSX
-rsync Makefile pi@raspberrypi:/home/pi/PSX
-ssh pi@raspberrypi "cd PSX; make"
+rsync main.cpp pi@raspberrypi:/home/pi/PSXPadRPI/
+rsync Makefile pi@raspberrypi:/home/pi/PSXPadRPI/
+ssh pi@raspberrypi "cd PSXPadRPI; make"
 
 
