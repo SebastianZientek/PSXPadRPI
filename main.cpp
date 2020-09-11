@@ -6,6 +6,7 @@
 #include <pigpio.h>
 #include <atomic>
 #include <thread>
+#include <unistd.h>
 
 #define PSX_BTN_CROSS 1
 #define PSX_BTN_CIRCLE 2
@@ -95,6 +96,19 @@ static void setBitInGamepadData(uint8_t button, uint8_t byte, bool pressed)
 }
 
 /**
+ * @brief resets psxGamepadData to default values (none button is pressed)
+ *
+ */
+static void resetPsxData()
+{
+    std::atomic<uint8_t> *ptr = psxGamepadData;
+    for (const uint8_t &val: {0xFF, 0xFF, 0x7F, 0x7F, 0x7F, 0x7F})
+    {
+        *ptr++ = val;
+    }
+}
+
+/**
  * @brief thread for reading data from connected controller
  *
  */
@@ -107,7 +121,8 @@ static void jsReaderThread()
     {
         if (readJSEvent(jsFileDesc, &event) != 0)
         {
-            while (openJS() != 0) sleep(1);
+            resetPsxData();
+            while (openJS() != 0) sleep(5);
             continue;
         }
 
@@ -214,11 +229,7 @@ static void i2cSlaveConnection()
  */
 static void init()
 {
-    std::atomic<uint8_t> *ptr = psxGamepadData;
-    for (const uint8_t &val: {0xFF, 0xFF, 0x7F, 0x7F, 0x7F, 0x7F})
-    {
-        *ptr++ = val;
-    }
+    resetPsxData();
     gpioInitialise();
     gpioSetPullUpDown(18, PI_PUD_UP);
     gpioSetPullUpDown(19, PI_PUD_UP);
@@ -233,6 +244,7 @@ int main()
 
     jsReader.join();
     i2cConnection.join();
+
 
     return 0;
 }
