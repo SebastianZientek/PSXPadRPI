@@ -7,6 +7,10 @@
 #include <atomic>
 #include <thread>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/input.h>
+
+#include "Vibration.hpp"
 
 #define PSX_BTN_CROSS 1
 #define PSX_BTN_CIRCLE 2
@@ -26,9 +30,14 @@
 #define PSX_BTN_LEFT 0
 #define I2C_RPI_SLAVE_ADDR 0x6A
 
-const char *device = "/dev/input/js0";
+const char *jsDevice = "/dev/input/js0";
+const char *evDevice = "/dev/input/event0";
 int jsFileDesc = 0; // File descriptor for joystick file
+int evFileDesc = 0; // File descriptor for event file (vibrations)
 bsc_xfer_t xfer; // For i2c (slave) communication
+
+struct ff_effect effect; // Vibration effect
+Vibration vibration;
 
 /**
  * @brief Gamepad data
@@ -44,16 +53,27 @@ bsc_xfer_t xfer; // For i2c (slave) communication
 std::atomic<uint8_t> psxGamepadData[6];
 
 /**
- * @brief opens joystick device for reading
+ * @brief opens joystick jsDevice for reading
  *
  * @return 0 if ok, -1 not ok
  */
 static int openJS()
 {
-    jsFileDesc = open(device, O_RDONLY);
+    jsFileDesc = open(jsDevice, O_RDONLY);
     if (jsFileDesc == -1)
     {
         std::cerr << "Could not open js0\n";
+        return -1;
+    }
+    return 0;
+}
+
+static int openEV()
+{
+    evFileDesc = open(evDevice, O_RDWR);
+    if (evFileDesc == -1)
+    {
+        std::cerr << "Could not open event0\n";
         return -1;
     }
     return 0;
@@ -207,11 +227,18 @@ static void i2cSlaveConnection()
     xfer.control = (I2C_RPI_SLAVE_ADDR << 16) | 0x305; // Enable i2c (tx/rx), pass the address
     xfer.txCnt = 0;
 
+    vibration.setDevice(evDevice);
+
     while (1)
     {
-        if (xfer.rxCnt == 1 && xfer.rxBuf[0] == 'r')
+        if (xfer.rxCnt == 3 && xfer.rxBuf[0] == 'r')
         {
             memcpy(xfer.txBuf, psxGamepadData, 6);
+            const uint8_t &smallMotor = xfer.rxBuf[1];
+            const uint8_t &largeMotor = xfer.rxBuf[2];
+
+            vibration.applyForces(smallMotor, largeMotor);
+
             xfer.txCnt = 6;
         }
         else
