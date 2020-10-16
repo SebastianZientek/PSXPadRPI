@@ -5,15 +5,15 @@
 
 #include <linux/input.h>
 
-class Vibration
+class Rumble
 {
 public:
-    Vibration();
+    Rumble();
     void setDevice(std::string device);
     void applyForces(const uint8_t &smallMotorForce, const uint8_t &largeMotorForce);
 
 private:
-    int evFileDesc = 0;
+    int evFileDesc = -1;
     std::string evDevice;
     ff_effect effect;
     input_event play;
